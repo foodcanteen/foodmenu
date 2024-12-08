@@ -77,7 +77,6 @@ input[type="number"] {
     border-radius: 15px;
     box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.1); /* Subtle shadow for the container */
 }
-
 /* Contact Buttons */
 .contact-buttons {
     display: flex;
@@ -85,7 +84,6 @@ input[type="number"] {
     gap: 20px; /* Space between buttons */
     margin-top: 20px;
 }
-
 .contact-buttons button, .contact-buttons a {
     display: flex;
     align-items: center;
@@ -96,11 +94,18 @@ input[type="number"] {
     border-radius: 6px;
     text-decoration: none; /* Remove underline for links */
     color: #fff;
-    background-color: #1565c0; /* Primary blue color for all buttons */
-    border: 1px solid #1565c0;
 }
 
-.contact-buttons button:hover, .contact-buttons a:hover {
+.contact-buttons a:hover {
+    background-color: #5a6268;
+}
+/* WhatsApp Logo */
+.whatsapp-logo {
+    width: 24px;
+    height: 24px;
+    margin-right: 8px;
+}
+/* Add hover effect for buttons */
+.contact-buttons button:hover {
     background-color: #0d47a1; /* Darker blue for hover */
-    border-color: #0d47a1;
 }
