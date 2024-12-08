@@ -79,7 +79,7 @@
 
         // Fetch all foods and populate both sections
         function fetchFoods() {
-            fetch('https://food-menu-backend-rizo.onrender.com/food')
+            fetch('https://food-menu-backend-lfq8.onrender.com/food')
                 .then(response => response.json())
                 .then(data => {
                     foods = data;
@@ -137,7 +137,7 @@
 
             if (editingFoodId) {
                 // Edit existing food
-                fetch(`https://food-menu-backend-rizo.onrender.com/food/${editingFoodId}`, {
+                fetch(`https://food-menu-backend-lfq8.onrender.com/food/${editingFoodId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name, price, image }),
@@ -158,7 +158,7 @@
                     .catch(err => console.error(err));
             } else {
                 // Add new food
-                fetch('https://food-menu-backend-rizo.onrender.com/food', {
+                fetch('https://food-menu-backend-lfq8.onrender.com/food', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name, price, image }),
@@ -199,7 +199,7 @@
         function deleteFood(foodId) {
             if (!confirm('Are you sure you want to delete this food?')) return;
 
-            fetch(`https://food-menu-backend-rizo.onrender.com/food/${foodId}`, { method: 'DELETE' })
+            fetch(`https://food-menu-backend-lfq8.onrender.com/food/${foodId}`, { method: 'DELETE' })
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Failed to delete food.');
@@ -219,7 +219,7 @@
                 checkbox => parseInt(checkbox.value)
             );
 
-            fetch('https://food-menu-backend-rizo.onrender.com/menu', {
+            fetch('https://food-menu-backend-lfq8.onrender.com/menu', {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
