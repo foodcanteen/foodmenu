@@ -24,7 +24,7 @@
                             </div>
                             <div class="mb-3">
                                 <label for="price" class="form-label">Price (RM)</label>
-                                <input type="number" class="form-control" id="price" placeholder="Enter price" required>
+                                <input type="number" class="form-control" id="price" placeholder="Enter price" min="1" step="0.01" required>
                             </div>
                             <div class="mb-3">
                                 <label for="image" class="form-label">Image URL</label>
@@ -125,9 +125,15 @@
         addEditFoodForm.addEventListener('submit', event => {
             event.preventDefault();
 
-            const name = document.getElementById('name').value;
-            const price = document.getElementById('price').value;
-            const image = document.getElementById('image').value;
+            const name = document.getElementById('name').value.trim();
+            const price = parseFloat(document.getElementById('price').value);
+            const image = document.getElementById('image').value.trim();
+
+            // Validate price
+            if (isNaN(price) || price < 1) {
+                alert('Price must be a valid number greater than or equal to 1.');
+                return;
+            }
 
             if (editingFoodId) {
                 // Edit existing food
@@ -229,10 +235,7 @@
                 .then(() => {
                     alert("Today's menu saved!");
                 })
-                .catch(err => {
-                    console.error('Error saving menu:', err);
-                    alert('Failed to save menu. Check the console for more details.');
-                });
+                .catch(err => console.error('Error saving menu:', err));
         });
 
         // Initial fetch
