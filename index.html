@@ -6,6 +6,22 @@
     <title>Today's Menu</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="index.css" rel="stylesheet">
+    <style>
+        .contact-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        .contact-buttons button {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .whatsapp-logo {
+            width: 24px;
+            height: 24px;
+        }
+    </style>
 </head>
 <body>
     <div class="container mt-4">
@@ -13,8 +29,14 @@
         <div id="menu" class="row">
             <!-- Food items will be dynamically inserted here -->
         </div>
-        <div class="text-center mt-4">
-            <button id="contactButton" class="btn btn-primary btn-lg">Contact Us</button>
+        <div class="text-center mt-4 contact-buttons">
+            <button id="contactButton" class="btn btn-primary btn-lg">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" class="whatsapp-logo" alt="WhatsApp Logo">
+                Contact Us
+            </button>
+            <a href="tel:+129709663" class="btn btn-secondary btn-lg">
+                <i class="bi bi-telephone-fill"></i> Call Us
+            </a>
         </div>
     </div>
     <script>
