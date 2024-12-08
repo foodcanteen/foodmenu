@@ -105,8 +105,9 @@ app.delete('/food/:id', (req, res) => {
 
 
 // WebSocket Handling
-const server = app.listen(3000, () => {
-    console.log('Server is running on http://localhost:3000');
+const PORT = process.env.PORT || 3000;
+const server = app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
 });
 
 server.on('upgrade', (request, socket, head) => {
@@ -114,8 +115,3 @@ server.on('upgrade', (request, socket, head) => {
         wss.emit('connection', socket, request);
     });
 });
-
-
-// Use the dynamic PORT assigned by Render
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
