@@ -22,7 +22,7 @@
         const contactButton = document.getElementById('contactButton');
 
         // Fetch today's menu initially
-        fetch('http://localhost:3000/menu')
+        fetch('https://food-menu-backend-rizo.onrender.com/menu')
             .then(response => response.json())
             .then(updateMenu)
             .catch(err => console.error("Failed to load menu:", err));
@@ -58,16 +58,6 @@
                 contactButton.style.display = 'inline-block';
             }
         }
-
-        // WebSocket Connection
-        const socket = new WebSocket('ws://localhost:3000');
-
-        socket.addEventListener('message', event => {
-            const message = JSON.parse(event.data);
-            if (message.type === 'MENU_UPDATE') {
-                updateMenu(message);
-            }
-        });
 
         contactButton.addEventListener('click', () => {
             const selectedItems = Array.from(document.querySelectorAll('.food-checkbox:checked')).map(checkbox => {
