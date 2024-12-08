@@ -103,19 +103,20 @@ app.delete('/food/:id', (req, res) => {
     res.json({ message: 'Food deleted successfully!' });
 });
 
-
-// WebSocket Handling
-const server = app.listen(3000, () => {
-    console.log('Server is running on http://localhost:3000');
+// Health Check Endpoint
+app.get('/', (req, res) => {
+    res.status(200).send('Service is live!');
 });
 
+// Use the dynamic PORT assigned by Render
+const PORT = process.env.PORT || 3000;
+const server = app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
+
+// WebSocket Handling
 server.on('upgrade', (request, socket, head) => {
     wss.handleUpgrade(request, socket, head, socket => {
         wss.emit('connection', socket, request);
     });
 });
-
-
-// Use the dynamic PORT assigned by Render
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(Server running on port ${PORT}));
