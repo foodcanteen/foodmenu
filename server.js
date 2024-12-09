@@ -8,7 +8,7 @@ app.use(bodyParser.json());
 app.use(cors());
 
 // Firebase Admin Initialization
-const serviceAccount = require('./firebase-admin-key.json'); // Replace with your service account key
+const serviceAccount = require('./firebase-admin.json'); // Replace with your service account key
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
 });
