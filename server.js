@@ -98,14 +98,25 @@ app.get('/menu', async (req, res) => {
 app.put('/menu', async (req, res) => {
     const { menu: selectedMenu } = req.body;
 
-    try {
-        const foodsSnapshot = await foodsCollection.where(admin.firestore.FieldPath.documentId(), 'in', selectedMenu).get();
+    // Validate the selectedMenu array
+    if (!Array.isArray(selectedMenu) || selectedMenu.length === 0) {
+        return res.status(400).json({ message: 'Menu must be a non-empty array of valid food IDs.' });
+    }
 
-        if (foodsSnapshot.size !== selectedMenu.length) {
+    const validMenu = selectedMenu.filter(foodId => typeof foodId === 'string' && foodId.trim() !== '');
+
+    if (validMenu.length === 0) {
+        return res.status(400).json({ message: 'No valid food IDs provided in the menu.' });
+    }
+
+    try {
+        const foodsSnapshot = await foodsCollection.where(admin.firestore.FieldPath.documentId(), 'in', validMenu).get();
+
+        if (foodsSnapshot.size !== validMenu.length) {
             return res.status(400).json({ message: 'Some selected food IDs are invalid!' });
         }
 
-        const newMenu = { date: admin.firestore.Timestamp.now(), foodIds: selectedMenu };
+        const newMenu = { date: admin.firestore.Timestamp.now(), foodIds: validMenu };
         await menuCollection.add(newMenu);
         broadcastMenuUpdate(); // Notify WebSocket clients
         res.json({ message: "Today's menu updated successfully!" });
