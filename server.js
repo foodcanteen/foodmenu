@@ -9,7 +9,7 @@ app.use(bodyParser.json());
 app.use(cors());
 
 // Firebase Admin Initialization
-const serviceAccount = require('./firebase-admin-key.json'); // Ensure this file is in your project directory
+const serviceAccount = require('./firebase-admin-key.json'); // Replace with your service account key
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
 });
@@ -20,27 +20,6 @@ const menuCollection = db.collection('menu');
 
 // WebSocket Server
 const wss = new WebSocketServer({ noServer: true });
-
-// Function to broadcast updates to connected clients
-async function broadcastMenuUpdate() {
-    const snapshot = await menuCollection.orderBy('date', 'desc').limit(1).get();
-    if (snapshot.empty) return;
-
-    const menuDoc = snapshot.docs[0];
-    const menuData = menuDoc.data();
-    const menuItems = menuData.foodIds || [];
-
-    const foodsSnapshot = await foodsCollection.where(admin.firestore.FieldPath.documentId(), 'in', menuItems).get();
-    const todayMenu = foodsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-    const message = JSON.stringify({ type: 'MENU_UPDATE', menu: todayMenu });
-
-    wss.clients.forEach(client => {
-        if (client.readyState === client.OPEN) {
-            client.send(message);
-        }
-    });
-}
 
 // API: Add Food
 app.post('/food', async (req, res) => {
@@ -72,6 +51,24 @@ app.get('/food', async (req, res) => {
     }
 });
 
+// API: Save Today's Menu
+app.put('/menu', async (req, res) => {
+    const { menu: selectedMenu } = req.body;
+
+    if (!Array.isArray(selectedMenu) || selectedMenu.length === 0) {
+        return res.status(400).json({ message: 'Menu must be a non-empty array of valid food IDs.' });
+    }
+
+    try {
+        const newMenu = { date: admin.firestore.Timestamp.now(), foodIds: selectedMenu };
+        await menuCollection.add(newMenu);
+        res.json({ message: "Today's menu saved successfully!" });
+    } catch (error) {
+        console.error('Error saving menu:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
 // API: Get Today's Menu
 app.get('/menu', async (req, res) => {
     try {
@@ -94,99 +91,8 @@ app.get('/menu', async (req, res) => {
     }
 });
 
-// API: Save Today's Menu
-app.put('/menu', async (req, res) => {
-    const { menu: selectedMenu } = req.body;
-
-    // Validate the selectedMenu array
-    if (!Array.isArray(selectedMenu) || selectedMenu.length === 0) {
-        return res.status(400).json({ message: 'Menu must be a non-empty array of valid food IDs.' });
-    }
-
-    const validMenu = selectedMenu.filter(foodId => typeof foodId === 'string' && foodId.trim() !== '');
-
-    if (validMenu.length === 0) {
-        return res.status(400).json({ message: 'No valid food IDs provided in the menu.' });
-    }
-
-    try {
-        const foodsSnapshot = await foodsCollection.where(admin.firestore.FieldPath.documentId(), 'in', validMenu).get();
-
-        if (foodsSnapshot.size !== validMenu.length) {
-            return res.status(400).json({ message: 'Some selected food IDs are invalid!' });
-        }
-
-        const newMenu = { date: admin.firestore.Timestamp.now(), foodIds: validMenu };
-        await menuCollection.add(newMenu);
-        broadcastMenuUpdate(); // Notify WebSocket clients
-        res.json({ message: "Today's menu updated successfully!" });
-    } catch (error) {
-        console.error('Error saving menu:', error);
-        res.status(500).json({ message: 'Internal server error' });
-    }
-});
-
-// Edit Food API
-app.put('/food/:id', async (req, res) => {
-    const { id } = req.params;
-    const { name, price, image } = req.body;
-
-    try {
-        const foodRef = foodsCollection.doc(id);
-        const foodDoc = await foodRef.get();
-
-        if (!foodDoc.exists) {
-            return res.status(404).json({ message: 'Food not found!' });
-        }
-
-        const updatedData = {
-            ...(name && { name }),
-            ...(price && { price: parseFloat(price) }),
-            ...(image && { image }),
-        };
-
-        await foodRef.update(updatedData);
-        res.json({ message: 'Food updated successfully!' });
-    } catch (error) {
-        console.error('Error updating food:', error);
-        res.status(500).json({ message: 'Internal server error' });
-    }
-});
-
-// Delete Food API
-app.delete('/food/:id', async (req, res) => {
-    const { id } = req.params;
-
-    try {
-        const foodRef = foodsCollection.doc(id);
-        const foodDoc = await foodRef.get();
-
-        if (!foodDoc.exists) {
-            return res.status(404).json({ message: 'Food not found!' });
-        }
-
-        await foodRef.delete();
-        res.json({ message: 'Food deleted successfully!' });
-    } catch (error) {
-        console.error('Error deleting food:', error);
-        res.status(500).json({ message: 'Internal server error' });
-    }
-});
-
-// Health Check Endpoint
-app.get('/', (req, res) => {
-    res.status(200).send('Service is live!');
-});
-
-// Use the dynamic PORT assigned by Render
+// Start the server
 const PORT = process.env.PORT || 3000;
-const server = app.listen(PORT, () => {
+app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
-});
-
-// WebSocket Handling
-server.on('upgrade', (request, socket, head) => {
-    wss.handleUpgrade(request, socket, head, socket => {
-        wss.emit('connection', socket, request);
-    });
 });
