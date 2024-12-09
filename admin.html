@@ -5,82 +5,240 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="index.css" rel="stylesheet">
 </head>
 <body>
     <div class="container mt-4">
         <h1 class="text-center mb-4">Admin Dashboard</h1>
-        <div>
-            <h2>Add Food</h2>
-            <form id="addFoodForm">
-                <input type="text" id="name" placeholder="Name" required>
-                <input type="number" id="price" placeholder="Price" required>
-                <input type="text" id="image" placeholder="Image URL" required>
-                <button type="submit">Add Food</button>
-            </form>
+
+        <!-- Add/Edit Food Section -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card shadow">
+                    <div class="card-header bg-success text-white">Add or Edit Food</div>
+                    <div class="card-body">
+                        <form id="addEditFoodForm">
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Food Name</label>
+                                <input type="text" class="form-control" id="name" placeholder="Enter food name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="price" class="form-label">Price (RM)</label>
+                                <input type="number" class="form-control" id="price" placeholder="Enter price" min="1" step="0.01" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="image" class="form-label">Image URL</label>
+                                <input type="text" class="form-control" id="image" placeholder="Enter image URL" required>
+                            </div>
+                            <button type="submit" class="btn btn-success">Save Food</button>
+                            <button id="cancelEdit" class="btn btn-secondary d-none">Cancel</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div>
-            <h2>Menu</h2>
-            <ul id="foodList"></ul>
-            <button id="saveMenuButton">Save Today's Menu</button>
+
+        <!-- Food Management Section -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">All Foods</div>
+                    <div class="card-body">
+                        <ul id="foodList" class="list-group">
+                            <!-- Food items will be dynamically listed here -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Select Today's Menu Section -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card shadow">
+                    <div class="card-header bg-warning text-white">Select Today's Menu</div>
+                    <div class="card-body">
+                        <ul id="menuList" class="list-group">
+                            <!-- Foods to select for today's menu -->
+                        </ul>
+                        <button id="saveMenu" class="btn btn-warning mt-3">Save Today's Menu</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-    <script>
-        const addFoodForm = document.getElementById('addFoodForm');
-        const foodList = document.getElementById('foodList');
-        const saveMenuButton = document.getElementById('saveMenuButton');
 
-        // Fetch food items
+    <script>
+        const foodList = document.getElementById('foodList');
+        const menuList = document.getElementById('menuList');
+        const addEditFoodForm = document.getElementById('addEditFoodForm');
+        const cancelEditButton = document.getElementById('cancelEdit');
+        const saveMenuButton = document.getElementById('saveMenu');
+        let foods = [];
+        let editingFoodId = null;
+
+        // Fetch all foods and populate both sections
         function fetchFoods() {
-            fetch('https://your-backend-url/food') // Replace with your backend URL
+            fetch('https://food-menu-backend-lfq8.onrender.com/food')
                 .then(response => response.json())
                 .then(data => {
-                    foodList.innerHTML = '';
-                    data.forEach(food => {
-                        foodList.innerHTML += `
-                            <li>
-                                <input type="checkbox" value="${food.id}">${food.name} - RM${food.price.toFixed(2)}
-                            </li>
-                        `;
-                    });
+                    foods = data;
+                    renderFoodList();
+                    renderMenuList();
                 })
-                .catch(err => console.error('Failed to load foods:', err));
+                .catch(err => console.error('Error fetching foods:', err));
         }
 
-        // Add food
-        addFoodForm.addEventListener('submit', event => {
-            event.preventDefault();
-            const name = document.getElementById('name').value;
-            const price = document.getElementById('price').value;
-            const image = document.getElementById('image').value;
+        // Render the food management list
+        function renderFoodList() {
+            foodList.innerHTML = '';
+            foods.forEach(food => {
+                foodList.innerHTML += `
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>
+                            <strong>${food.name}</strong> - RM${food.price.toFixed(2)}<br>
+                            <small>${food.image}</small>
+                        </span>
+                        <div>
+                            <button class="btn btn-warning btn-sm me-2" onclick="editFood(${food.id})">Edit</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteFood(${food.id})">Delete</button>
+                        </div>
+                    </li>
+                `;
+            });
+        }
 
-            fetch('https://your-backend-url/food', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, price, image }),
-            })
-                .then(() => {
-                    fetchFoods();
-                    addFoodForm.reset();
+        // Render the menu selection list
+        function renderMenuList() {
+            menuList.innerHTML = '';
+            foods.forEach(food => {
+                menuList.innerHTML += `
+                    <li class="list-group-item">
+                        <input type="checkbox" class="form-check-input me-2" value="${food.id}">
+                        ${food.name} - RM${food.price.toFixed(2)}
+                    </li>
+                `;
+            });
+        }
+
+        // Add or Edit Food
+        addEditFoodForm.addEventListener('submit', event => {
+            event.preventDefault();
+
+            const name = document.getElementById('name').value.trim();
+            const price = parseFloat(document.getElementById('price').value);
+            const image = document.getElementById('image').value.trim();
+
+            // Validate price
+            if (isNaN(price) || price < 1) {
+                alert('Price must be a valid number greater than or equal to 1.');
+                return;
+            }
+
+            if (editingFoodId) {
+                // Edit existing food
+                fetch(`https://food-menu-backend-lfq8.onrender.com/food/${editingFoodId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, price, image }),
                 })
-                .catch(err => console.error('Failed to add food:', err));
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Failed to edit food.');
+                        }
+                        return response.json();
+                    })
+                    .then(() => {
+                        alert('Food updated successfully!');
+                        editingFoodId = null;
+                        cancelEditButton.classList.add('d-none');
+                        addEditFoodForm.reset();
+                        fetchFoods();
+                    })
+                    .catch(err => console.error(err));
+            } else {
+                // Add new food
+                fetch('https://food-menu-backend-lfq8.onrender.com/food', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, price, image }),
+                })
+                    .then(response => response.json())
+                    .then(() => {
+                        alert('Food added successfully!');
+                        addEditFoodForm.reset();
+                        fetchFoods();
+                    })
+                    .catch(err => console.error('Error adding food:', err));
+            }
         });
 
-        // Save menu
+        // Edit Food
+        function editFood(foodId) {
+            const food = foods.find(f => f.id === foodId);
+            if (!food) return;
+
+            editingFoodId = foodId;
+            cancelEditButton.classList.remove('d-none');
+
+            // Populate the form with food details
+            document.getElementById('name').value = food.name;
+            document.getElementById('price').value = food.price;
+            document.getElementById('image').value = food.image;
+        }
+
+        // Cancel Editing
+        cancelEditButton.addEventListener('click', event => {
+            event.preventDefault();
+            editingFoodId = null;
+            cancelEditButton.classList.add('d-none');
+            addEditFoodForm.reset();
+        });
+
+        // Delete Food
+        function deleteFood(foodId) {
+            if (!confirm('Are you sure you want to delete this food?')) return;
+
+            fetch(`https://food-menu-backend-lfq8.onrender.com/food/${foodId}`, { method: 'DELETE' })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to delete food.');
+                    }
+                    return response.json();
+                })
+                .then(() => {
+                    alert('Food deleted successfully!');
+                    fetchFoods();
+                })
+                .catch(err => console.error('Error deleting food:', err));
+        }
+
+        // Save today's menu
         saveMenuButton.addEventListener('click', () => {
-            const selectedIds = Array.from(foodList.querySelectorAll('input[type="checkbox"]:checked')).map(
-                checkbox => checkbox.value
+            const selectedFoodIds = Array.from(document.querySelectorAll('#menuList input[type="checkbox"]:checked')).map(
+                checkbox => parseInt(checkbox.value)
             );
 
-            fetch('https://your-backend-url/menu', {
+            fetch('https://food-menu-backend-lfq8.onrender.com/menu', {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ menu: selectedIds }),
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ menu: selectedFoodIds }),
             })
-                .then(() => alert("Menu saved!"))
-                .catch(err => console.error('Failed to save menu:', err));
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => Promise.reject(err));
+                    }
+                    return response.json();
+                })
+                .then(() => {
+                    alert("Today's menu saved!");
+                })
+                .catch(err => console.error('Error saving menu:', err));
         });
 
-        // Initial load
+        // Initial fetch
         fetchFoods();
     </script>
 </body>
